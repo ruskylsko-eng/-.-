@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Метод «Сеть паука»</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #eef2ff, #fdf2f8);
+    text-align: center;
+  }
+
+  h1 {
+    color: #333;
+  }
+
+  p {
+    color: #555;
+  }
+
+  #container {
+    position: relative;
+    width: 600px;
+    height: 600px;
+    margin: 20px auto;
+    border-radius: 50%;
+    background: white;
+    border: 2px dashed #aaa;
+  }
+
+  .student {
+    position: absolute;
+    width: 110px;
+    height: 40px;
+    background: #7c9cff;
+    color: white;
+    border-radius: 20px;
+    line-height: 40px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 14px;
+    transition: transform 0.2s, background 0.2s;
+  }
+
+  .student:hover {
+    background: #5c7cfa;
+    transform: scale(1.05);
+  }
+
+  #startBtn {
+    position: absolute;
+    width: 120px;
+    height: 50px;
+    left: 240px;
+    top: 275px;
+    background: #ff6b6b;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    font-size: 16px;
+    cursor: pointer;
+    z-index: 10;
+  }
+
+  #startBtn:hover {
+    background: #ff4c4c;
+  }
+
+  svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+</style>
+</head>
+<body>
+
+<h1>Метод «Сеть паука»</h1>
+<p>Нажмите кнопку, чтобы выбрать первого ученика. Потом нажимайте имена по очереди.</p>
+
+<div id="container">
+  <svg width="600" height="600"></svg>
+  <button id="startBtn">Начать</button>
+</div>
+
+<script>
+const students = [
+  "Сафия",
+  "Рома",
+  "Аяулым",
+  "Злата",
+   "Варвара",
+  "Яна"
+];
+
+const container = document.getElementById("container");
+const svg = container.querySelector("svg");
+const startBtn = document.getElementById("startBtn");
+
+let lastPoint = null;
+
+// 🔔 звук колокольчика
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playNiceSound() {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = "sine";
+  osc.frequency.value = 880;
+  gain.gain.value = 0.15;
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
+  osc.stop(audioCtx.currentTime + 0.6);
+}
+
+// 🔊 озвучивание имени
+function speakName(text) {
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "ru-RU";
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utter);
+}
+
+// создаём учеников на круге
+students.forEach((name, index) => {
+  const angle = (2 * Math.PI / students.length) * index;
+  const centerX = 300;
+  const centerY = 300;
+  const radius = 220;
+
+  const x = centerX + radius * Math.cos(angle) - 55;
+  const y = centerY + radius * Math.sin(angle) - 20;
+
+  const div = document.createElement("div");
+  div.className = "student";
+  div.textContent = name;
+  div.style.left = x + "px";
+  div.style.top = y + "px";
+
+  div.onclick = () => {
+    audioCtx.resume();
+    playNiceSound();
+    speakName(name);
+
+    if (lastPoint) {
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", lastPoint.x);
+      line.setAttribute("y1", lastPoint.y);
+      line.setAttribute("x2", x + 55);
+      line.setAttribute("y2", y + 20);
+      line.setAttribute("stroke", "#ff8fab");
+      line.setAttribute("stroke-width", "2");
+      svg.appendChild(line);
+    }
+
+    lastPoint = { x: x + 55, y: y + 20 };
+  };
+
+  container.appendChild(div);
+});
+
+// 🔹 кнопка "Начать" выбирает случайного ученика
+startBtn.onclick = () => {
+  const randomIndex = Math.floor(Math.random() * students.length);
+  const firstStudent = students[randomIndex];
+  speakName(firstStudent);
+  playNiceSound();
+  alert(`Первый ученик: ${firstStudent}`);
+  startBtn.style.display = "none"; // убираем кнопку после выбора
+};
+</script>
+
+</body>
+</html>
